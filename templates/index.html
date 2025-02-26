@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dự Đoán Khách Hàng Churn</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f8ff;
+        text-align: center;
+        padding: 20px;
+      }
+      textarea {
+        width: 100%;
+        height: 100px;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      form {
+        margin-top: 20px;
+        display: inline-block;
+        width: 600px;
+        text-align: left;
+      }
+      label {
+        font-weight: bold;
+        display: block;
+        margin-top: 10px;
+      }
+      input {
+        width: 100%;
+        padding: 8px;
+        margin: 5px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        width: 100%;
+        padding: 10px;
+        background-color: #4caf50;
+        border: none;
+        color: white;
+        font-size: 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      h2 {
+        margin-top: 20px;
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Dự Đoán Khách Hàng Churn</h1>
+
+    <textarea
+      id="input_text"
+      placeholder="Nhập dữ liệu khách hàng hoặc dán một dòng CSV tại đây..."
+    ></textarea>
+    <button onclick="parseInput()">Nhập Dữ Liệu</button>
+
+    <form id="churnForm">
+      <div id="formFields"></div>
+      <button type="button" onclick="predictChurn()">Dự Đoán Churn</button>
+    </form>
+
+    <h2 id="result"></h2>
+
+    <script>
+      function parseInput() {
+        const inputText = document.getElementById("input_text").value;
+
+        fetch("/parse", {
+          method: "POST",
+          body: new URLSearchParams({ input_text: inputText }),
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const formFields = document.getElementById("formFields");
+            formFields.innerHTML = "";
+
+            Object.keys(data).forEach((key) => {
+              formFields.innerHTML += `
+                        <label>${key}</label>
+                        <input type="text" name="${key}" value="${data[key]}" required>
+                    `;
+            });
+          })
+          .catch((error) => {
+            console.error("Lỗi:", error);
+          });
+      }
+
+      function predictChurn() {
+        const form = document.getElementById("churnForm");
+        const formData = new FormData(form);
+
+        fetch("/predict", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            const result = document.getElementById("result");
+            if (data.error) {
+              result.innerText = `❌ Lỗi: ${data.error}`;
+              result.style.color = "red";
+            } else {
+              result.innerText = `🔮 Xác suất khách hàng rời đi: ${data.prediction}`;
+              result.style.color = "green";
+            }
+          })
+          .catch((error) => {
+            console.error("Lỗi:", error);
+          });
+      }
+    </script>
+  </body>
+</html>
